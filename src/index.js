@@ -4,7 +4,7 @@ const program = require('commander')
 
 import glob from './glob'
 import parse from './parse'
-import resolve from './resolve'
+import treeify from './treeify'
 import render from './render'
 
 program
@@ -27,9 +27,9 @@ async function main() {
   for(let i=0; i<options.source.length; i++) {
     files = files.concat(await glob(options.source[i], options.ignore))
   }
-  let astMap = await parse(files)
-  let tree = resolve(astMap)
-  // await render(options, tree)
+  let result = await parse(files)
+  let tree = treeify(result)
+  await render(options, tree)
 }
 
 main()

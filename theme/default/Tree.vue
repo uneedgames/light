@@ -2,17 +2,18 @@
   <div class="tree">
     <div class="node" :class="nodeClass" @dblclick="toggle" @click="toggleSelect">
       <i class="arrow icon fa" :class="arrowClass" aria-hidden="true" @click="toggle()"></i>
-      <i v-if="iconClass" class="icon fa" :class="iconClass" aria-hidden="true"></i>
-      <span class="name">{{tree.name}}</span>
+      <span v-if="label" :class="label.class">{{label.text}}</span>
+      <span class="text">{{tree.name}}</span>
     </div>
-    <div v-if="tree.toggle && tree.children && tree.children.length" class="children">
-      <tree v-for="(child,idx) in tree.children" :key="idx" :tree="child" :tree-id="treeId" :level="curLevel+1" :onSelect="onSelect"></tree>
+    <div v-if="tree.toggle && sortedChildren && sortedChildren.length" class="children">
+      <tree v-for="(child,idx) in sortedChildren" :key="idx" :tree="child" :tree-id="treeId" :level="curLevel+1" :onSelect="onSelect"></tree>
     </div>
   </div>
 </template>
 
 <script>
 import $ from 'jquery'
+import sortChildren from './sortChildren'
 
 const treeSelection = {}
 
@@ -25,12 +26,52 @@ export default {
     onSelect: Function,
   },
   computed: {
+    sortedChildren() {
+      return sortChildren(this.tree.children)
+    },
     arrowClass() {
+      if(!this.tree.children || this.tree.children.length === 0) {
+        return ''
+      }
       return this.toggled ? 'fa-caret-down' : 'fa-caret-right'
     },
-    iconClass() {
-      let clazz = ''
-      return clazz
+    label() {
+      if(this.tree.isNamespace) {
+        return {
+          class: 'label namespace',
+          text: 'NS'
+        }
+      }
+      if(this.tree.isModule) {
+        return {
+          class: 'label module',
+          text: 'M'
+        }
+      }
+      if(this.tree.isClass) {
+        return {
+          class: 'label class',
+          text: 'C'
+        }
+      }
+      if(this.tree.isMethod) {
+        return {
+          class: 'label method',
+          text: 'M'
+        }
+      }
+      if(this.tree.isConst) {
+        return {
+          class: 'label const',
+          text: 'C'
+        }
+      }
+      if(this.tree.isProperty) {
+        return {
+          class: 'label property',
+          text: 'P'
+        }
+      }
     },
     nodeClass() {
       return this.selected ? 'selected' : ''
@@ -101,6 +142,8 @@ export default {
   padding: 3px 5px;
   color: #5a5a5a;
   user-select: none;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font-size: 0px;
 
   &.selected {
     background: #dddddd;
@@ -109,20 +152,34 @@ export default {
 
   .arrow {
     margin-left: 5px;
+    color: #aaaaaa;
+    font-size: 12px;
   }
 
   .icon {
     width: 13px;
     height: 13px;
     text-align: center;
+    font-size: 12px;
   }
 
   .text {
-    color: #aaaaaa;
+    margin-left: 3px;
     white-space: nowrap;
     max-width: 100px;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 12px;
+  }
+
+  .label {
+    font-size: 12px;
+    color: white;
+    border-radius: 3px;
+    padding: 2px 4px 1px 4px; 
+    display: inline-block;
+    text-align: center;
+    transform: scale(0.8);
   }
 }
 </style>

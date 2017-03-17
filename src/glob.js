@@ -1,8 +1,8 @@
 const glob = require('glob')
 
-export default function (pattern) {
+export default function (pattern, ignore) {
   return new Promise((resolve, reject) => {
-    glob(pattern, (err, files) => {
+    glob(pattern, { ignore: ignore }, (err, files) => {
       if(err) return reject(err)
       resolve(files)
     })

@@ -9,24 +9,21 @@ import Tree from './Tree.vue'
 export default {
   components: { Tree },
   props: {
-    tree: Array
+    tree: Array,
+    onSelect: Function
   },
   computed: {
     trimedTree() {
-      let kinds = [
-        'class',
-        'namespace'
-      ]
-      return this.tree.filter((item) => {
-        // return kinds.indexOf(item.kind) !== -1
-        return true
+      return this.tree.map(subtree => {
+        subtree.toggle = true
+        return subtree
       })
     }
   },
 
   methods: {
-    onTreeSelect(tree) {  
-      console.log(tree)
+    onTreeSelect(node) { 
+      this.onSelect(node.tree)
     }
   }
 }
