@@ -1,12 +1,37 @@
 <template>
   <div class="detail" v-if="node">
-    <h3>
-    {{node.path}}
-    <span v-for="label in labels" :class="label.class">{{label.text}}</span>
-    </h3>
-    <p class="description">
-      {{node.comment.parsed.description}}
-    </p>
+    <div class="row">
+      <div class="col s12 m9 l10">
+        <section>
+
+          <h4 class="detail-title">
+            {{node.path}}
+            <span v-for="label in labels" class="badge" :class="label.class">{{label.text}}</span>
+          </h4>
+
+          <div class="description flow-text" v-html="node.comment.parsed.description"></div>
+
+          <div v-if="constants.length > 0" class="split-padding"></div>
+          <properties v-if="constants.length > 0" title="Constants" :properties="constants"></properties>
+
+          <div v-if="staticProperties.length > 0" class="split-padding"></div>
+          <properties v-if="staticProperties.length > 0" title="Static Properties" :properties="staticProperties"></properties>
+
+          <div v-if="staticMethods.length > 0" class="split-padding"></div>
+          <methods v-if="staticMethods.length > 0" title="Static Methods" :methods="staticMethods"></methods>
+
+          <div v-if="properties.length > 0" class="split-padding"></div>
+          <properties v-if="properties.length > 0" title="Properties" :properties="properties"></properties>
+
+          <div v-if="methods.length > 0" class="split-padding"></div>
+          <methods v-if="methods.length > 0" title="Methods" :methods="methods"></methods>
+
+          <div class="split-padding"></div>
+
+        </section>
+      </div>
+      <div class="col hide-on-small-only m3 l2"></div>
+    </div>
   </div>
   <div v-else class="empty">
     <div class="tips">
@@ -15,12 +40,34 @@
   </div>
 </template>
 <script>
+import sortChildren from './sortChildren'
+import Properties from './Properties.vue'
+import Methods from './Methods.vue'
 
 export default {
+  components: {
+    Properties,
+    Methods
+  },
   props: {
     node: Object
   },
   computed: {
+    constants() {
+      return sortChildren(this.node.children.filter((child) => child.isConst))
+    },
+    staticProperties() {
+      return sortChildren(this.node.children.filter((child) => child.isStatic && child.isProperty && !child.isConst))
+    },
+    staticMethods() {
+      return sortChildren(this.node.children.filter((child) => child.isStatic && child.isMethod))
+    },
+    properties() {
+      return sortChildren(this.node.children.filter((child) => !child.isStatic && child.isProperty && !child.isConst))
+    },
+    methods() {
+      return sortChildren(this.node.children.filter((child) => !child.isStatic && child.isMethod))
+    },
     labels() {
       let node = this.node
       let labels = []
@@ -81,22 +128,40 @@ export default {
 .detail {
   width: 100%;
   height: 100%;
-  padding: 0 20px;
+  padding: 0 10px;
+  overflow: auto;
+
+  .detail-title {
+    font-size: 22px;
+    font-weight: bold;
+
+    .label {
+      font-size: 11px;
+      color: white;
+      border-radius: 3px;
+      float: none;
+      margin-left: 4px;
+      vertical-align: bottom;
+      padding: 2px 5px 3px 5px;
+    }
+
+  }
+
+  h5 {
+    border-bottom: 1px solid #aaaaaa;
+  }
+
   .description {
     font-size: 14px;
+    color: #555;
   }
-  .label {
-    font-size: 11px;
-    color: white;
-    border-radius: 3px;
-    padding: 2px 4px 2px 4px; 
-    display: inline-block;
-    text-align: center;
-    vertical-align: text-bottom;
+
+  .split-padding {
+    padding: 15px;
   }
 }
 .empty {
-  text-align: bottom;
+  text-align: center;
 }
 .tips {
   font-size: 20px;

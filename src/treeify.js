@@ -77,6 +77,20 @@ function treeifyFile(result) {
     if(isConstructor) {
       name = name || 'constructor'
     }
+
+    let type
+    let params
+    if(isConst) {
+      type = getTagProperty(comment, 'const', 'type')
+    } else if(!!property) {
+      type = getTagProperty(comment, 'property', 'type')
+    } else if(!!method) {
+      type = getTagProperty(comment, 'return', 'type')
+      params = comment.parsed.tags.filter(tag => tag.tag === 'param')
+    }
+
+    let see = getTag(comment, 'see')
+    let example = getTag(comment, 'example')
     
     let item = { 
       name: name, 
@@ -92,6 +106,11 @@ function treeifyFile(result) {
       isReadonly: isReadonly,
       comment: comment,
       memberof: memberof,
+      type: type,
+      params: params,
+      description: comment.parsed.description || '',
+      see: see,
+      example: example,
       children: [],
       childMap: {}
     }

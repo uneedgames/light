@@ -1,9 +1,9 @@
 <template>
   <div class="app">
-    <div class="left">
+    <div class="left-part">
       <hierarchy :tree="tree" :onSelect="onHierarchySelect"/>
     </div>
-    <div class="center">
+    <div class="center-part">
       <detail :node="selection"/>
     </div>
   </div>
@@ -43,13 +43,14 @@ export default {
   display: flex;
   flex-direction: row;
 
-  > .left {
+  > .left-part {
     width: 300px;
     min-width: 300px;
     box-shadow: 2px 0px 2px #dddddd;
+    overflow: auto;
   }
 
-  > .center {
+  > .center-part {
     flex: 1;
     height: 100%;
   }

@@ -1,5 +1,12 @@
 export default function(children) {
-  return children.slice().sort((a, b) => value(a) - value(b))
+  return children.slice().sort((a, b) => {
+    let v = value(a) - value(b)
+    if(v === 0) {
+      let sorted = [a.name, b.name].sort()
+      return sorted.indexOf(a.name) - sorted.indexOf(b.name)
+    }
+    return v
+  })
 }
 
 function value(test) {

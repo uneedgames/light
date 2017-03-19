@@ -7,6 +7,7 @@ import parse from './parse'
 import treeify from './treeify'
 import render from './render'
 
+
 program
   .version('0.1.0')
   .option('-c, --config [config]', 'Specify config file path, default is light.json')
@@ -23,13 +24,17 @@ const options = {
 Object.assign(options, JSON.parse(fs.readFileSync(path.resolve(process.cwd(), program.config || options.config))))
 
 async function main() {
-  let files = []
-  for(let i=0; i<options.source.length; i++) {
-    files = files.concat(await glob(options.source[i], options.ignore))
+  try {
+    let files = []
+    for(let i=0; i<options.source.length; i++) {
+      files = files.concat(await glob(options.source[i], options.ignore))
+    }
+    let result = await parse(files)
+    let tree = treeify(result)
+    await render(options, tree)
+  } catch(e) {
+    console.error(e)
   }
-  let result = await parse(files)
-  let tree = treeify(result)
-  await render(options, tree)
 }
 
 main()
