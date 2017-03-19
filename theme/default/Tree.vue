@@ -27,10 +27,12 @@ export default {
   },
   computed: {
     sortedChildren() {
-      return sortChildren(this.tree.children)
+      return sortChildren(this.tree.children).filter(child => {
+        return child.isNamespace || child.isModule || child.isClass
+      })
     },
     arrowClass() {
-      if(!this.tree.children || this.tree.children.length === 0) {
+      if(this.sortedChildren.length === 0) {
         return ''
       }
       return this.toggled ? 'fa-caret-down' : 'fa-caret-right'

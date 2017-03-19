@@ -46,7 +46,7 @@ export default {
   > .left-part {
     width: 300px;
     min-width: 300px;
-    box-shadow: 2px 0px 2px #dddddd;
+    box-shadow: 1px 0px 2px #dddddd;
     overflow: auto;
   }
 
