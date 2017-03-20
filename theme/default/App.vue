@@ -1,23 +1,27 @@
 <template>
-  <div class="app">
-    <div class="left-part">
-      <hierarchy :tree="tree" :onSelect="onHierarchySelect"/>
+  <div class="app pusher full height">
+    <div class="left-part full height">
+      <hierarchy :options="options" :tree="tree" :onSelect="onHierarchySelect"/>
     </div>
-    <div class="center-part">
-      <detail :node="selection"/>
+    <div class="center-part full height">
+      <detail v-if="selection" :node="selection" :options="options"/>
+      <markdown v-if="!selection && options.readme" :content="options.readme" />
     </div>
   </div>
 </template>
 <script>
 import Hierarchy from './Hierarchy.vue'
 import Detail from './Detail.vue'
+import Markdown from './Markdown.vue'
 
 export default {
   components: {
     Hierarchy,
-    Detail
+    Detail,
+    Markdown
   },
   props: {
+    options: Object,
     tree: Array,
   },
 
@@ -36,7 +40,6 @@ export default {
 }
 </script>
 <style scoped lang="less">
-
 .app {
   width: 100%;
   height: 100%;
@@ -44,63 +47,44 @@ export default {
   flex-direction: row;
 
   > .left-part {
-    width: 300px;
-    min-width: 300px;
+    width: 240px;
     box-shadow: 1px 0px 2px #dddddd;
     overflow: auto;
+    height: 100%;
   }
 
   > .center-part {
     flex: 1;
     height: 100%;
+    overflow: auto;
   }
 }
-
 </style>
-<style lang="less">
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  position: absolute;
+<style>
+.description pre, .markdown pre {
+  padding: 1rem;
+  background: #f1f1f1;
 }
 
+.description pre > code, .markdown pre code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
 
-.label {
-  &.namespace {
-    background: #1e88e5;
-  }
+p > code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  background: #dddddd;
+  border-radius: 3px;
+  display: inline-block;
+  padding: 0px 4px;
+  color: #333333;
+  font-size: 0.8em;
+}
 
-  &.module {
-    background: #026e00;
-  }
+img {
+  max-width: 100%;
+}
 
-  &.class {
-    background: #b71c1c;
-  }
-
-  &.const {
-    background: #5e35b1;
-  }
-
-  &.method {
-    background: #0d47a1;
-  }
-
-  &.property {
-    background: #00695c;
-  }
-
-  &.static {
-    background: #1a237e;
-  }
-
-  &.readonly {
-    background: #00bfa5;
-  }
-
+.deprecated {
+  text-decoration: line-through;
 }
 </style>

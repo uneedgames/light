@@ -3,6 +3,7 @@ const fse = require('fs-extra')
 const webpack  = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
 const webpackConfig = require('./webpack.config')
 
 export default function(options, tree) {
@@ -13,15 +14,36 @@ export default function(options, tree) {
     index: path.resolve(options.theme, 'index.js')
   }
   webpackConfig.output.path = path.resolve(projectCwd, './lightout')
-  webpackConfig.plugins.push(new webpack.DefinePlugin({
-    DATA: JSON.stringify({
-      tree: tree
-    })
-  }))
   webpackConfig.plugins.push(new HtmlWebpackPlugin({
     title: 'Document',
     template: path.resolve(options.theme, 'index.html'),
     filename: 'index.html'
+  }))
+
+  if(options.logo) {
+    webpackConfig.plugins.push(new CopyWebpackPlugin([{
+      from: path.resolve(projectCwd, options.logo),
+      to: webpackConfig.output.path
+    }]))
+    options.logo = path.basename(options.logo)
+  }
+
+  if(fse.existsSync(path.resolve(projectCwd, 'readme.md'))) {
+    options.readme = fse.readFileSync(path.resolve(projectCwd, 'readme.md'), 'utf8')
+  }
+
+  if(options.images) {
+    webpackConfig.plugins.push(new CopyWebpackPlugin([{
+      from: path.resolve(projectCwd, options.images),
+      to: path.resolve(webpackConfig.output.path, options.images)
+    }]))
+  }
+
+  webpackConfig.plugins.push(new webpack.DefinePlugin({
+    DATA: JSON.stringify({
+      options: options,
+      tree: tree
+    })
   }))
   
   const compiler = webpack(webpackConfig)

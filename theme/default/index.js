@@ -1,6 +1,11 @@
 import 'font-awesome/css/font-awesome.css'
-import 'materialize-css/dist/css/materialize.css'
-import 'materialize-css/dist/js/materialize.js'
+import 'jquery'
+import './semantic/semantic.css'
+import './semantic/semantic.js'
+import 'highlight.js/styles/default.css'
+
+import './directive'
+
 import Vue from 'vue'
 import App from './App.vue'
 
@@ -12,7 +17,8 @@ new Vue({
   render(createElement) {
     return createElement(App, {
       props: {
-        tree: this.tree
+        options: this.options,
+        tree: this.tree,
       }
     })
   }

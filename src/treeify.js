@@ -73,9 +73,15 @@ function treeifyFile(result) {
     let isStatic = !!getTag(comment, 'static')
     let isConstructor = !!getTag(comment, 'constructor')
     let isReadonly = !!getTag(comment, 'readonly')
+    let isDecorator = !!getTag(comment, 'decorator')
+    let isDeprecated = !!getTag(comment, 'deprecated')
+    let extend = getTagProperty(comment, 'extends', 'name')
     let name = scopeKey || method || property
     if(isConstructor) {
       name = name || 'constructor'
+    }
+    if(isConst) {
+      name = getTagProperty(comment, 'const', 'name')
     }
 
     let type
@@ -91,9 +97,12 @@ function treeifyFile(result) {
 
     let see = getTag(comment, 'see')
     let example = getTag(comment, 'example')
+    let group = getTagProperty(comment, 'group', 'name')
     
     let item = { 
       name: name, 
+      group: group,
+      extend: extend,
       isScope: !!scopeKey,
       isClass: !!clazz,
       isModule: !!module,
@@ -101,10 +110,11 @@ function treeifyFile(result) {
       isMethod: !!method,
       isProperty: !!property,
       isConstructor: isConstructor,
+      isDecorator: isDecorator,
       isConst: isConst,
       isStatic: isStatic,
       isReadonly: isReadonly,
-      comment: comment,
+      isDeprecated: isDeprecated,
       memberof: memberof,
       type: type,
       params: params,

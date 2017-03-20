@@ -1,16 +1,13 @@
 <template>
   <div class="detail-methods">
-    <h5>{{title}}</h5>
-    <table class="bordered">
-      <tbody>
-        <tr v-for="method in methods">
-          <td>
-            <h6 class="method">{{method.name}}({{getMethodArgs(method)}}):{{method.type || 'void'}}</h6>
-            <div v-html="method.description"></div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <h2 class="ui header">{{title}}</h2>
+    <div class="method" v-for="method in methods">
+      <h4 class="ui header">
+        <a class="anchor" :id="getAnchor(method)"></a>
+        <b>{{(method.isDecorator ? '@' : '') + method.name}}</b>(<span v-html="getMethodArgs(method)"></span>):<b style="color: brown;">{{method.type || 'void'}}</b>
+        </h4>
+      <p class="description" v-html="method.description"></p>
+    </div>
   </div>
 </template>
 <script>
@@ -19,24 +16,46 @@ export default {
   props: {
     title: String,
     methods: Array,
+    getAnchorId: Function
   },
   methods: {
     getMethodArgs(method) {
-      console.log(method.params)
       if(!method.params) {
         return
       }
       return method.params.map(param => {
-        return param.name + ":" + (param.type || 'Any')
+        return param.name + ":<b style='color: blue;'>" + (param.type || 'Any') + '</b>'
       }).join(', ')
+    },
+    getAnchor(method) {
+      return this.getAnchorId(this.title, method)
     }
   }
 }
 </script>
 <style scoped lang="less">
 .detail-methods {
-  .method {
-    font-weight: bold;
+  margin-bottom: 2rem;
+
+  h4 {
+    font-weight: normal !important;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
   }
+
+  .method {
+    padding-bottom: 2.4rem;
+    > .description {
+      color: rgba(0, 0, 0, 0.6)
+    }
+  }
+
+  .anchor {
+    display: block;
+    width: 100%;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  
 }
 </style>
