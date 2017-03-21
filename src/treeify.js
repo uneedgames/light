@@ -56,7 +56,13 @@ function memberify(parsedResult) {
     traverseBuildPath(root)
   }
 
-  return Object.keys(tree).map(key => tree[key])
+  function trimChildMap(tree) {
+    delete tree.childMap
+    tree.children.forEach(trimChildMap)
+    return tree
+  }
+
+  return Object.keys(tree).map(key => trimChildMap(tree[key]))
 }
 
 function treeifyFile(result) {

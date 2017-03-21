@@ -4,10 +4,10 @@
       <a v-if="options.logo" class="ui logo icon image" href="/">
         <img :src="options.logo">
       </a>
-      <a href="/"><b>{{options.title}}</b></a>
+      <a href="./"><b>{{options.title}}</b></a>
     </div>
     <div class="item" style="display: none;">
-      <a href="/"><b>Articles</b></a>
+      <a href="./"><b>Articles</b></a>
     </div>
 
     <!-- API nav -->

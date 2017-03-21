@@ -11,11 +11,12 @@ export default function(options, tree) {
   const projectCwd = process.cwd()
 
   webpackConfig.entry = {
-    index: path.resolve(options.theme, 'index.js')
+    index: path.resolve(options.theme, 'index.js'),
+    vendor: ['vue', 'jquery', 'highlight.js']
   }
   webpackConfig.output.path = path.resolve(projectCwd, './lightout')
   webpackConfig.plugins.push(new HtmlWebpackPlugin({
-    title: 'Document',
+    title: options.title,
     template: path.resolve(options.theme, 'index.html'),
     filename: 'index.html'
   }))

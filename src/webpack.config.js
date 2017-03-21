@@ -20,7 +20,7 @@ module.exports = {
         test: /\.js$/,
   			exclude: /(node_modules|bower_components)/,
         loader: 'babel-loader',
-        query: {
+        options: {
           presets: ['es2015', 'stage-0', 'stage-3'],
           plugins: ["transform-decorators-legacy"]
         }
@@ -37,14 +37,14 @@ module.exports = {
       {
         test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
         loader: 'file-loader',
-        query: {
+        options: {
           name: 'images/[name].[ext]'
         }
       },
       {
         test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
         loader: 'file-loader',
-        query: {
+        options: {
           name: 'fonts/[name].[ext]'
         }
       }
@@ -55,6 +55,10 @@ module.exports = {
       compress: {
         warnings: false
       }
+    }),
+    new webpack.optimize.CommonsChunkPlugin({
+      name: "vendor",
+      minChunks: Infinity,
     })
   ]
 };
