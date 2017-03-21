@@ -118,12 +118,12 @@ export default myNamespace
 
 ## Other Tags
 
-* @readonly  for property
-* @static    for property and method
-* @param     for method arguments
-* @return    for method returns
-* @const     for a const property
-* @memberof  specify what is's belong to
+* **@readonly**  for property
+* **@static**    for property and method
+* **@param**     for method arguments
+* **@return**    for method returns
+* **@const**     for a const property
+* **@memberof**  specify what is's belong to
 
 # MIT License
 
