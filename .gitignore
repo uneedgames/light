@@ -3,3 +3,5 @@ lib
 semantic
 ast.json
 temp
+npm-debug.log
+yarn-error.log
