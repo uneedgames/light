@@ -125,6 +125,14 @@ export default myNamespace
 * **@const**     for a const property
 * **@memberof**  specify what is's belong to
 
-# MIT License
+## Road Map
+
+* Improve code
+* Article support
+* Tests
+* Theme support
+* `light -s` for watch files changed
+
+## MIT License
 
 
