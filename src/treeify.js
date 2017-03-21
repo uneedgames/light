@@ -1,9 +1,6 @@
 const fs = require('fs')
 const path = require('path')
 
-
-import write from './write'
-
 export default function(parsedResult) {
   return memberify(parsedResult)
 }
@@ -19,12 +16,16 @@ function memberify(parsedResult) {
   })
 
   whileUntilNotChanges(comments, item => {
+    if(item.isNamespace) {
+      console.log(item.name)
+    }
     if(!item.memberof) {
       tree[item.name] = item
+      comments.splice(comments.indexOf(item), 1)
     } else {
       let owner = tree
       let memberof = item.memberof
-      if(memberof.indexOf('.') !== 1) {
+      if(!tree[memberof] && memberof.indexOf('.') !== 1) {
         let path = memberof.split('.')
         owner = {
           childMap: tree
@@ -68,6 +69,7 @@ function memberify(parsedResult) {
 function treeifyFile(result) {
   let tree = {}
   let comments = result.comments.slice().map(comment => {
+
     let namespace = getTagProperty(comment, 'namespace', 'name')
     let module = getTagProperty(comment, 'module', 'name')
     let clazz = getTagProperty(comment, 'class', 'name')
@@ -136,6 +138,9 @@ function treeifyFile(result) {
 
   let scope
   whileUntilNotChanges(comments, item => {
+    if(item.isNamespace) {
+      return
+    }
     let hasOwner = false
     let owner = scope
     if(item.memberof) {

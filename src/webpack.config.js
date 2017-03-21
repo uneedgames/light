@@ -14,6 +14,7 @@ module.exports = {
   resolveLoader: {
     modules: [path.resolve(__dirname, '../node_modules')],
   },
+  stats: "errors-only",
   module: {
     rules: [
       {

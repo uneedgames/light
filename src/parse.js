@@ -1,10 +1,13 @@
 const fs = require('fs')
 const path = require('path')
 const acorn = require('acorn')
+const babylon = require('babylon')
 const estraverse = require('estraverse')
 const parseComment = require('comment-parser')
 
-import write from './write'
+
+import * as T from 'babel-types'
+import traverse from 'babel-traverse'
 
 /**
  * scan comments from the giving files
@@ -15,9 +18,9 @@ export default async function(files, onProgress) {
   let result = []
   for(let i=0; i<files.length; i++) {
     let file = files[i]
+    onProgress && onProgress(++progress, file)
     let item = await parseFile(file)
     result.push(item)
-    onProgress && onProgress(++progress, file)
   }
   return result
 }
@@ -28,80 +31,47 @@ function parseFile(file) {
       if(err) return reject(err)
 
       // parse AST
-      var comments = []
-      var tokens = []
-      var ast = acorn.parse(content, {
+      var ast = babylon.parse(content.toString('utf8'), {
         sourceType: 'module',
         ranges: true,
-        onComment: comments,
-        onToken: tokens
+        plugins: [
+          'decorators',
+          'asyncGenerators'
+        ]
       })
 
-      // parse comments
-      comments = comments.filter(comment => {
-        return comment.type !== 'Line'
-      }).map(comment => {
-        comment.parsed = parseComment("/*" + comment.value + "*/")[0] || {
-          tags: []
-        }
-        return comment
-      })
+      var comments = ast.program.comments || []
+      var newComments = []
 
-      estraverse.attachComments(ast, comments, tokens)
+      traverse(ast, {
+        enter: (path) => {
+          let node = path.node
+          let comments = node.leadingComments || []
+          if(comments.length <= 0) return
 
-      let newComments = []
+          let comment = node.leadingComments[node.leadingComments.length-1]
 
-      estraverse.traverse(ast, {
-        enter: (node) => {
-          if(node.leadingComments && node.leadingComments.length > 0) {
-
-            let comment = node.leadingComments[node.leadingComments.length-1]
-
-            // maybe attach comments change tags array to a json object
-            if(comment.parsed && comment.parsed.tags) {
-              if(Array.prototype.toString(comment.parsed.tags) !== '[object Array]') {
-                comment.parsed.tags = Object.keys(comment.parsed.tags).map(key => comment.parsed.tags[key])
-              }
-            } else {
-              comment.parsed = {
-                tags: []
-              }
-            }
-
-            if (node.type === 'MethodDefinition') {
-              switch (node.kind) {
-                case 'method':
-                  fillNameToTag(comment, 'method', node.key.name);
-                  break
-                case 'get':
-                case 'set':
-                  fillNameToTag(comment, 'property', node.key.name);
-                  break
-                case 'constructor':
-                  // TODO
-                  break
-              }
-            } else if (node.type === 'ExportNamedDeclaration' || node.type === 'ExportDefaultDeclaration') {
-              switch (node.declaration.type) {
-                case 'ClassDeclaration':
-                  fillNameToTag(comment, 'class', node.declaration.id.name);
-                  break
-                case 'FunctionDeclaration':
-                  fillNameToTag(comment, 'method', node.declaration.id.name);
-                  break
-              }
-            } else if(node.type === 'Property') {
-              fillNameToTag(comment, 'property', node.key.name)
-            } else if(node.type === 'FunctionDeclaration') {
-              fillNameToTag(comment, 'method', node.id.name)
-            } else if(node.type === 'VariableDeclaration') {
-              // TODO
-            } else if(node.type === 'ExpressionStatement') {
-              // TODO
-            }
-            
-            newComments.push(JSON.parse(JSON.stringify(comment)))
+          if(comment.type !== 'CommentBlock') return
+          comment.parsed = parseComment("/*" + comment.value + "*/")[0] || {
+            tags: []
           }
+          if(comment.parsed && comment.parsed.tags) {
+            if(Array.prototype.toString(comment.parsed.tags) !== '[object Array]') {
+              comment.parsed.tags = Object.keys(comment.parsed.tags).map(key => comment.parsed.tags[key])
+            }
+          } else {
+            comment.parsed = {
+              tags: []
+            }
+          }
+          try {
+            resolveNodeComment(node, comment)
+          } catch(e) {
+            console.log(node)
+            console.warn(e.message)
+          }
+
+          newComments.push(JSON.parse(JSON.stringify(comment)))
         }
       })
 
@@ -114,6 +84,60 @@ function parseFile(file) {
 
     })
   })
+}
+
+function resolveNodeComment(node, comment) {
+  if(T.isClassMethod(node)) {
+    switch (node.kind) {
+      case 'method':
+        fillNameToTag(comment, 'method', node.key.name);
+        break
+      case 'get':
+      case 'set':
+        fillNameToTag(comment, 'property', node.key.name);
+        break
+      case 'constructor':
+        fillNameToTag(comment, 'method', 'constructor');
+        break
+    }
+  }
+  else if(T.isExportDefaultDeclaration(node) || T.isExportNamedDeclaration(node)) {
+    switch (node.declaration.type) {
+      case 'ClassDeclaration':
+        fillNameToTag(comment, 'class', node.declaration.id.name);
+        break
+      case 'FunctionDeclaration':
+        if(node.declaration && node.declaration.id) {
+          fillNameToTag(comment, 'method', node.declaration.id.name);
+        }
+        break
+    }
+  } else if(T.isObjectProperty(node)) {
+    fillNameToTag(comment, 'property', node.key.name)
+  } else if(T.isFunctionDeclaration(node)) {
+    fillNameToTag(comment, 'method', node.id.name)
+  } else if(T.isVariableDeclaration(node)) {
+    fillNameToTag(comment, 'property', node.declarations[0].id)
+  } else if(T.isExpressionStatement(node)) {
+    if(T.isAssignmentExpression(node.expression)) {
+      if(T.isFunctionExpression(node.expression.right)) {
+        let left = node.expression.left
+        if(T.isMemberExpression(left)) {
+          fillNameToTag(comment, 'method', left.property.name)
+        }
+      } else {
+        let left = node.expression.left
+        if(T.isMemberExpression(left)) {
+          fillNameToTag(comment, 'property', left.property.name)
+        }
+      }
+    }
+  } else if(T.isClassDeclaration(node)) {
+    fillNameToTag(comment, 'class', node.id.name);
+  } else {
+    console.log(node)
+    process.exit(-1)
+  }
 }
 
 function scopeKey(comment) {

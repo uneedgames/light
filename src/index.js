@@ -6,6 +6,7 @@ import glob from './glob'
 import parse from './parse'
 import treeify from './treeify'
 import render from './render'
+import progress from './progress'
 
 
 program
@@ -25,13 +26,34 @@ Object.assign(options, JSON.parse(fs.readFileSync(path.resolve(process.cwd(), pr
 
 async function main() {
   try {
+
+    console.log('light start')
+
+    progress.step('glob', options.source.length)
     let files = []
     for(let i=0; i<options.source.length; i++) {
+      progress.task(options.source[i])
       files = files.concat(await glob(options.source[i], options.ignore))
     }
-    let result = await parse(files)
+    progress.done(`got ${files.length} files.`)
+    if(files.length <= 0) return
+
+    progress.step('parse', files.length)
+    let result = await parse(files, (_, file) => {
+      progress.task(file)
+    })
+    progress.done('done')
+
+    progress.step('treeify', 1)
+    progress.task('doing')
     let tree = treeify(result)
+    progress.done('done')
+
+    progress.step('render', 1)
+    progress.task('doing')
     await render(options, tree)
+    progress.done('done')
+
   } catch(e) {
     console.error(e)
   }

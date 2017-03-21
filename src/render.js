@@ -75,17 +75,18 @@ export default function(options, tree) {
 
     fse.emptyDirSync(path.resolve(projectCwd, webpackConfig.output.path))
 
-    compiler.run(function(err, stats) {
-      if (err) throw err;
-      console.log(stats.toString({
-        chunks: false,
-        colors: true
-      }))
-
-      console.log('######################')
-      console.log('light complete')
-      console.log('######################')
+    return new Promise((resolve, reject) => {
+      compiler.run(function(err, stats) {
+        if (err) return reject(err);
+        if(stats.hasErrors()) {
+          return reject(new Error(stats.toString({
+            colors: true
+          })))
+        }
+        resolve()
+      })
     })
+    
 
   }
 
