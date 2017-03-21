@@ -8,6 +8,35 @@ a javascript document generator
 light -h
 ```
 
+## Configuration File
+
+Using `light -c [conifg path]` to specify a json file for the configuration
+
+> Default is light.json
+
+```javascript
+{
+  // page title
+  "title": "Foo Document",
+
+  // page icon
+  "logo": "logo.png",
+
+  // specify source files or patterns 
+  "source": [
+    "src/**/*.js"
+  ],
+
+  // specify what files or patterns is ignored
+  "ignore": [ 
+    "src/someIngored.js"
+  ],
+
+  // specify images folder
+  "images": "images", 
+}
+```
+
 ## Comment Tags
 
 ### @class
