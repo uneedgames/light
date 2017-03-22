@@ -1,0 +1,8 @@
+{
+  "title": "LIGHT DOCS",
+  "logo": "u2d.png",
+  "source": [
+    "src/**/*.js"
+  ],
+  "images": "images"
+}

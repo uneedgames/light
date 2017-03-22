@@ -1,10 +1,9 @@
 const fs = require('fs')
 const path = require('path')
 
-export default function(parsedResult) {
+export default function(context, parsedResult) {
   return memberify(parsedResult)
 }
-
 
 function memberify(parsedResult) {
   let tree = {}
@@ -15,21 +14,16 @@ function memberify(parsedResult) {
     comments = comments.concat(fileTree.comments)
   })
 
-  whileUntilNotChanges(comments, item => {
-    if(item.isNamespace) {
-      console.log(item.name)
-    }
-    if(!item.memberof) {
-      tree[item.name] = item
-      comments.splice(comments.indexOf(item), 1)
+  whileUntilNotChanges(comments, comment => {
+    let memberof = comment.getMemberof()
+    if(!memberof) {
+      tree[comment.getName()] = comment
+      comments.splice(comments.indexOf(comment), 1)
     } else {
       let owner = tree
-      let memberof = item.memberof
       if(!tree[memberof] && memberof.indexOf('.') !== 1) {
         let path = memberof.split('.')
-        owner = {
-          childMap: tree
-        }
+        owner = { childMap: tree }
         for(let i=0; i<path.length; i++) {
           owner = owner.childMap[path[i]]
           if(!owner) break
@@ -38,18 +32,18 @@ function memberify(parsedResult) {
         owner = tree[memberof]
       }
       if(owner) {
-        owner.children.push(item)
-        comments.splice(comments.indexOf(item), 1)
+        owner.addChild(comment)
+        comments.splice(comments.indexOf(comment), 1)
       }
     }
   })
 
   let pathStack = []
 
-  function traverseBuildPath(item) {
-    pathStack.push(item.name)
-    item.path = pathStack.join('.')
-    item.children.forEach(traverseBuildPath)
+  function traverseBuildPath(comment) {
+    pathStack.push(comment.getName())
+    comment.path = pathStack.join('.')
+    comment.children.forEach(traverseBuildPath)
     pathStack.pop()
   }
   for(var key in tree) {
@@ -68,94 +62,26 @@ function memberify(parsedResult) {
 
 function treeifyFile(result) {
   let tree = {}
-  let comments = result.comments.slice().map(comment => {
-
-    let namespace = getTagProperty(comment, 'namespace', 'name')
-    let module = getTagProperty(comment, 'module', 'name')
-    let clazz = getTagProperty(comment, 'class', 'name')
-    let memberof = getTagProperty(comment, 'memberof', 'name')
-    let scopeKey = namespace || module || clazz
-    let method = getTagProperty(comment, 'method', 'name')
-    let property = getTagProperty(comment, 'property', 'name')
-    let isConst = !!getTag(comment, 'const')
-    let isStatic = !!getTag(comment, 'static')
-    let isConstructor = !!getTag(comment, 'constructor')
-    let isReadonly = !!getTag(comment, 'readonly')
-    let isDecorator = !!getTag(comment, 'decorator')
-    let isDeprecated = !!getTag(comment, 'deprecated')
-    let extend = getTagProperty(comment, 'extends', 'name')
-    let name = scopeKey || method || property
-    if(isConstructor) {
-      name = name || 'constructor'
-    }
-    if(isConst) {
-      name = getTagProperty(comment, 'const', 'name')
-    }
-
-    let type
-    let params
-    if(isConst) {
-      type = getTagProperty(comment, 'const', 'type')
-    } else if(!!property) {
-      type = getTagProperty(comment, 'property', 'type')
-    } else if(!!method) {
-      type = getTagProperty(comment, 'return', 'type')
-      params = comment.parsed.tags.filter(tag => tag.tag === 'param')
-    }
-
-    let see = getTag(comment, 'see')
-    let example = getTag(comment, 'example')
-    let group = getTagProperty(comment, 'group', 'name')
-    
-    let item = { 
-      name: name, 
-      group: group,
-      extend: extend,
-      isScope: !!scopeKey,
-      isClass: !!clazz,
-      isModule: !!module,
-      isNamespace: !!namespace,
-      isMethod: !!method,
-      isProperty: !!property,
-      isConstructor: isConstructor,
-      isDecorator: isDecorator,
-      isConst: isConst,
-      isStatic: isStatic,
-      isReadonly: isReadonly,
-      isDeprecated: isDeprecated,
-      memberof: memberof,
-      type: type,
-      params: params,
-      description: comment.parsed.description || '',
-      see: see,
-      example: example,
-      children: [],
-      childMap: {}
-    }
-
-    return item
-  })
-
   let scope
-  whileUntilNotChanges(comments, item => {
-    if(item.isNamespace) {
+  let comments = result.comments
+  whileUntilNotChanges(comments, comment => {
+    if(comment.is('namespace')) {
       return
     }
-    let hasOwner = false
     let owner = scope
-    if(item.memberof) {
-      owner = tree[item.memberof]
+    let memberof = comment.getMemberof()
+    if(memberof) {
+      owner = tree[memberof]
     }
 
     if(owner) {
-      owner.children.push(item)
-      owner.childMap[item.name] = item
-      comments.splice(comments.indexOf(item), 1)
+      owner.addChild(comment)
+      comments.splice(comments.indexOf(comment), 1)
     }
 
-    if(item.isScope) {
-      scope = item
-      tree[scope.name] = scope
+    if(comment.isScope()) {
+      scope = comment
+      tree[scope.getName()] = scope
     }
   })
 
@@ -174,19 +100,5 @@ function whileUntilNotChanges(arr, func) {
       break
     }
   }
-}
-
-function getTag(comment, tagName) {
-  if(comment.parsed.tags && comment.parsed.tags.length > 0) {
-    return comment.parsed.tags.filter(tag => tag.tag === tagName)[0]
-  }
-}
-
-function getTagProperty(comment, tagName, attr) {
-  let tag = comment.parsed.tags.filter(tag => {
-    return tag.tag === tagName
-  })[0]
-  if(!tag) return
-  return tag[attr]
 }
 

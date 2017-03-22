@@ -4,49 +4,132 @@ const webpack  = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
-const webpackConfig = require('./webpack.config')
 
-export default function(options, tree) {
+export default function(context, tree) {
 
-  const projectCwd = process.cwd()
-
-  webpackConfig.entry = {
-    index: path.resolve(options.theme, 'index.js'),
-    vendor: ['vue', 'jquery', 'highlight.js']
+  let options = context.options
+  let themePath = context.options.theme
+  if(!path.isAbsolute(themePath)) {
+    themePath = path.resolve(context.workspace, themePath)
   }
-  webpackConfig.output.path = path.resolve(projectCwd, './lightout')
-  webpackConfig.plugins.push(new HtmlWebpackPlugin({
-    title: options.title,
-    template: path.resolve(options.theme, 'index.html'),
-    filename: 'index.html'
-  }))
 
+  let themeConfig = {
+    type: "webpack",
+    render: "render.js",
+    config: 'webpack.config.js',
+    data: 'json'
+  }
+
+  // scan theme.json
+  let themeJSONPath = path.resolve(themePath, 'theme.json')
+  if(fse.existsSync(themeJSONPath)) {
+    themeConfig = fse.readJSONSync(themeJSONPath)
+    if(!themeConfig.type) {
+      throw new Error('theme.json should configure type property, such as webpack or normal')
+    }
+  }
+
+  if(themeConfig.data === 'json') {
+    tree = tree2JSON(tree)
+  }
+
+  if(themeConfig.type === 'normal') {
+    let renderModulePath = path.resolve(themePath, themeConfig.render)
+    if(!fse.existsSync(renderModulePath)) {
+      throw new Error('Can not find render module: ' + themeConfig.render)
+    }
+
+    const render = require(renderModulePath)
+    render(context, tree, themeConfig)
+
+  } else if(themeConfig.type === 'webpack') {
+
+    let webpackConfigPath = path.resolve(themePath, themeConfig.config)
+    if(!fse.existsSync(webpackConfigPath)) {
+      throw new Error('Fail to read webpack config file: ' + themeConfig.config)
+    }
+
+    let webpackConfig = require(webpackConfigPath)
+    if(typeof webpackConfig === 'function') {
+      webpackConfig = webpackConfig(context)
+    }
+    webpackRender(context, tree, themeConfig, webpackConfig)
+
+  } else {
+    throw new Error('Unknow theme type: ' + themeConfig.type)
+  }
+
+}
+
+function tree2JSON(tree, children) {
+  return (children || tree).map(comment => {
+    let params
+    if(comment.is('method')) {
+      params = comment.parsed.tags.filter(tag => tag.tag === 'param')
+    }
+    return {
+      name: comment.getName(), 
+      path: comment.path,
+      group: comment.getTagProperty('group', 'name'),
+      extend: comment.getTagProperty('extends', 'name'),
+      isScope: comment.isScope(),
+      isClass: comment.is('class'),
+      isModule: comment.is('module'),
+      isNamespace: comment.is('namespace'),
+      isMethod: comment.is('method'),
+      isProperty: comment.is('property'),
+      isConstructor: comment.is('constructor'),
+      isDecorator: comment.is('decorator'),
+      isConst: comment.is('const'),
+      isStatic: comment.is('static'),
+      isReadonly: comment.is('readonly'),
+      isDeprecated: comment.is('deprecated'),
+      memberof: comment.getMemberof(),
+      type: comment.getType(),
+      params: params,
+      description: comment.getDescription(),
+      children: tree2JSON(comment, comment.children)
+    }
+  })
+}
+
+function webpackRender(context, tree, themeConfig, webpackConfig) {
+  
+  let options = context.options
+
+  webpackConfig.output.path = path.resolve(context.workspace, webpackConfig.output.path)
+
+  // copy logo
   if(options.logo) {
     webpackConfig.plugins.push(new CopyWebpackPlugin([{
-      from: path.resolve(projectCwd, options.logo),
+      from: path.resolve(context.workspace, options.logo),
       to: webpackConfig.output.path
     }]))
     options.logo = path.basename(options.logo)
   }
 
-  if(fse.existsSync(path.resolve(projectCwd, 'readme.md'))) {
-    options.readme = fse.readFileSync(path.resolve(projectCwd, 'readme.md'), 'utf8')
+
+  // readme
+  if(fse.existsSync(path.resolve(context.workspace, 'readme.md'))) {
+    options.readme = fse.readFileSync(path.resolve(context.workspace, 'readme.md'), 'utf8')
   }
 
+  // copy images
   if(options.images) {
     webpackConfig.plugins.push(new CopyWebpackPlugin([{
-      from: path.resolve(projectCwd, options.images),
+      from: path.resolve(context.workspace, options.images),
       to: path.resolve(webpackConfig.output.path, options.images)
     }]))
   }
 
+  // pass data to theme project
   webpackConfig.plugins.push(new webpack.DefinePlugin({
-    DATA: JSON.stringify({
+    LIGHT_DATA: JSON.stringify({
       options: options,
       tree: tree
     })
   }))
-  
+
   const compiler = webpack(webpackConfig)
 
   if(options.serve) {
@@ -73,7 +156,7 @@ export default function(options, tree) {
 
   } else {
 
-    fse.emptyDirSync(path.resolve(projectCwd, webpackConfig.output.path))
+    fse.emptyDirSync(path.resolve(context.worksapce, webpackConfig.output.path))
 
     return new Promise((resolve, reject) => {
       compiler.run(function(err, stats) {
@@ -89,5 +172,4 @@ export default function(options, tree) {
     
 
   }
-
 }

@@ -127,12 +127,15 @@ export default myNamespace
 
 ## Road Map
 
-* Improve code
 * Article support
 * Tests
-* Theme support
 * `light -s` for watch files changed
 
-## MIT License
+## Changelogs
+
+* Improve code
+* Theme support
+
+### MIT License
 
 

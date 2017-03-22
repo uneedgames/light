@@ -12,7 +12,7 @@ import App from './App.vue'
 new Vue({
   el: '#app',
   data() {
-    return DATA
+    return LIGHT_DATA
   },
   render(createElement) {
     return createElement(App, {
